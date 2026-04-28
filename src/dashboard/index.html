@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>רמב"ם יומי - הגדרות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Title Bar -->
+  <div class="title-bar">
+    <div class="title-bar-drag">
+      <span class="title-bar-text">רמב"ם יומי</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+
+    <!-- Status Card -->
+    <div class="status-card" id="status-card">
+      <div class="status-icon" id="status-icon">📖</div>
+      <div class="status-info">
+        <div class="status-title" id="status-title">טוען...</div>
+        <div class="status-subtitle" id="status-subtitle">מכין את ההלכות של היום</div>
+      </div>
+      <div class="status-badge" id="status-badge">0/0</div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="progress-label" id="progress-label">לא הושלם</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="btn btn-primary" id="btn-show-now">
+        <span class="btn-icon">⚡</span>
+        הצג עכשיו
+      </button>
+      <button class="btn btn-secondary" id="btn-toggle">
+        <span class="btn-icon" id="toggle-icon">⏸</span>
+        <span id="toggle-label">השהה</span>
+      </button>
+    </div>
+
+    <!-- Divider -->
+    <div class="section-divider">
+      <span>הגדרות</span>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-section">
+
+      <!-- Mode Selection -->
+      <div class="setting-row">
+        <div class="setting-label">
+          <span class="setting-icon">📚</span>
+          מצב לימוד
+        </div>
+        <div class="mode-toggle" id="mode-toggle">
+          <button class="mode-btn active" data-mode="1" id="mode-1">פרק יומי</button>
+          <button class="mode-btn" data-mode="3" id="mode-3">שלושה פרקים</button>
+        </div>
+      </div>
+
+      <!-- Interval -->
+      <div class="setting-row setting-col">
+        <div class="setting-label">
+          <span class="setting-icon">⏱</span>
+          תדירות הופעה (בדקות)
+        </div>
+        <div class="range-group">
+          <div class="range-item">
+            <label>מינימום</label>
+            <input type="range" id="interval-min" min="5" max="120" step="5" value="20" />
+            <span class="range-val" id="interval-min-val">20</span>
+          </div>
+          <div class="range-item">
+            <label>מקסימום</label>
+            <input type="range" id="interval-max" min="5" max="120" step="5" value="60" />
+            <span class="range-val" id="interval-max-val">60</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Save Button -->
+    <button class="btn btn-save" id="btn-save">
+      <span class="btn-icon">💾</span>
+      שמור הגדרות
+    </button>
+    <div class="save-feedback" id="save-feedback">✓ נשמר בהצלחה!</div>
+
+    <!-- Divider -->
+    <div class="section-divider">
+      <span>היסטוריה</span>
+    </div>
+
+    <!-- History Panel -->
+    <div class="history-panel" id="history-panel">
+      <div class="history-loading" id="history-loading">טוען היסטוריה...</div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+  </div><!-- .content -->
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

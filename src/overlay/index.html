@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>רמב"ם יומי</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Assistant:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="backdrop"></div>
+
+  <div class="card" id="card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <div class="header-top">
+        <div class="app-label">
+          <span class="app-dot"></span>
+          רמב"ם יומי
+        </div>
+        <!-- e.g. "הלכה 3 מתוך 8 · פרק א" -->
+        <div class="chapter-counter" id="chapter-counter">טוען...</div>
+      </div>
+      <h1 class="chapter-title" id="chapter-title">טוען...</h1>
+      <!-- paragraph position within chapter -->
+      <div class="chapter-subtitle" id="chapter-subtitle"></div>
+    </div>
+
+    <div class="card-divider"></div>
+
+    <!-- Text Content — single halakha -->
+    <div class="card-body" id="card-body">
+      <div class="loading-spinner" id="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">טוען...</div>
+      </div>
+      <div class="text-content" id="text-content"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer">
+      <!-- Overall progress bar -->
+      <div class="overall-progress">
+        <div class="overall-progress-bar">
+          <div class="overall-progress-fill" id="overall-fill" style="width:0%"></div>
+        </div>
+        <div class="overall-progress-label" id="overall-label">0/0 הלכות להיום</div>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn action-skip" id="btn-skip" title="פעם אחרת (Escape)">
+          <span class="action-icon">✗</span>
+          <span class="action-label">פעם אחרת</span>
+          <kbd class="action-key">Esc</kbd>
+        </button>
+
+        <button class="action-btn action-read" id="btn-read" title="קראתי (Enter)">
+          <span class="action-icon">✓</span>
+          <span class="action-label">קראתי!</span>
+          <kbd class="action-key">↵</kbd>
+        </button>
+
+        <button class="action-btn action-postpone" id="btn-postpone" title="עוד 5 דקות (Space)">
+          <span class="action-icon">⏱</span>
+          <span class="action-label">עוד 5 דקות</span>
+          <kbd class="action-key">Space</kbd>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- All Done -->
+  <div class="all-done-overlay" id="all-done-overlay" style="display:none">
+    <div class="all-done-card">
+      <div class="all-done-emoji">🎉</div>
+      <h2 class="all-done-title">כל הכבוד!</h2>
+      <p class="all-done-sub">סיימת את כל ההלכות להיום</p>
+      <button class="btn-done" id="btn-done-close">סגור</button>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>
