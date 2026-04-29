@@ -11,6 +11,9 @@ daily-rambam/
 ├── package.json             # App metadata, scripts, electron-builder config
 ├── CHANGELOG.md             # All version history (Keep a Changelog format)
 │
+├── releases/
+│   └── README.md            # Tracked release index with GitHub Release links (NO binaries in git)
+│
 ├── src/
 │   ├── dashboard/
 │   │   ├── index.html       # Settings + history UI
@@ -28,8 +31,10 @@ daily-rambam/
 │
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml           # CI: syntax validation on push/PR to main & stage
-│       └── cd.yml           # CD: DMG build + GitHub Release on v* tags
+│       ├── ci.yml               # CI PR gate: syntax check on PRs targeting main
+│       ├── test-pipeline.yml    # test branch: CI → promote to stage on pass
+│       ├── stage-pipeline.yml   # stage branch: CI + DMG build + smoke tests → promote to main
+│       └── cd.yml               # CD: DMG build + GitHub Release on v* tags from main
 │
 ├── .ai-rules/               # AI agent context files (this directory)
 │   ├── project-structure.md
@@ -63,7 +68,13 @@ daily-rambam/
 - App icon: `assets/icon.icns` (required for DMG build). Source is `assets/icon.png`.
 - Do NOT commit `image.png` (raw source) — it is `.gitignore`d.
 
-### Branches
-- `main` — production-ready code only; CD triggers on `v*` tags
-- `stage` — integration testing before merge to main; CI only
-- `test` — active feature/experiment branches; CI only, free to break
+### Branch Pipeline
+```
+test ──[CI]──► stage ──[CI + DMG + smoke tests]──► main ──[tag v*]──► GitHub Release
+```
+- `test` — active development; CI validate → auto-promote to `stage` on pass
+- `stage` — integration; CI + macOS DMG build + 5 smoke tests → auto-promote to `main`
+- `main` — production only; never commit directly; CD triggers on `v*` tags
+
+**Auto-promotion** uses `GH_PAT` secret (classic PAT, `repo` scope) to trigger downstream workflows.
+Falls back to `GITHUB_TOKEN` (promotion push succeeds but won't chain automatically).

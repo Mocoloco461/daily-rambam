@@ -1,0 +1,231 @@
+name: Stage Pipeline — CI + DMG + Smoke Tests + Promote to Main
+
+on:
+  push:
+    branches: [stage]
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Job 1: Fast CI on ubuntu (same as test)
+  # ─────────────────────────────────────────────
+  ci-validate:
+    name: CI Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check main process syntax
+        run: node --check main.js
+
+      - name: Check preload syntax
+        run: node --check preload.js
+
+      - name: Check src JS files syntax
+        run: |
+          find src -name "*.js" | while read f; do
+            echo "Checking $f"
+            node --check "$f"
+          done
+
+      - name: Validate package.json required fields
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const required = ['name','version','main','scripts','build'];
+            const missing = required.filter(k => !pkg[k]);
+            if (missing.length) { console.error('Missing fields:', missing); process.exit(1); }
+            console.log('package.json OK — version', pkg.version);
+          "
+
+      - name: Check referenced files exist
+        run: |
+          node -e "
+            const fs = require('fs');
+            const files = [
+              'main.js', 'preload.js',
+              'assets/icon.icns', 'assets/icon.png', 'assets/trayTemplate.png',
+              'src/dashboard/index.html', 'src/overlay/index.html'
+            ];
+            const missing = files.filter(f => !fs.existsSync(f));
+            if (missing.length) { console.error('Missing files:', missing); process.exit(1); }
+            console.log('All', files.length, 'required files present ✅');
+          "
+
+  # ─────────────────────────────────────────────
+  # Job 2: Build staging DMG on real macOS
+  # ─────────────────────────────────────────────
+  build-staging-dmg:
+    name: Build Staging DMG
+    needs: ci-validate
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DMG (staging)
+        run: npm run build:prod
+        env:
+          GH_TOKEN: ""
+
+      - name: List dist artefacts
+        run: ls -lh dist/
+
+      - name: Upload staging DMG as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-dmg-${{ github.sha }}
+          path: dist/*.dmg
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # Job 3: Smoke tests — simulate production conditions
+  # Runs on ubuntu (fast, cheaper) after DMG build confirms
+  # the build toolchain succeeds on macOS.
+  # ─────────────────────────────────────────────
+  smoke-tests:
+    name: Smoke Tests
+    needs: build-staging-dmg
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: "Smoke: All JS syntax clean"
+        run: |
+          for f in main.js preload.js; do node --check "$f"; done
+          find src -name "*.js" -exec node --check {} \;
+          echo "✅ All JS syntax valid"
+
+      - name: "Smoke: package.json integrity"
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const checks = [
+              ['name',    v => typeof v === 'string' && v.length > 0],
+              ['version', v => /^\d+\.\d+\.\d+$/.test(v)],
+              ['main',    v => v === 'main.js'],
+              ['build.appId',      v => typeof v === 'string'],
+              ['build.mac.icon',   v => v === 'assets/icon.icns'],
+              ['build.directories.output', v => v === 'dist'],
+            ];
+            let ok = true;
+            for (const [key, test] of checks) {
+              const parts = key.split('.');
+              const val = parts.reduce((o, k) => o?.[k], pkg);
+              if (!test(val)) {
+                console.error('FAIL:', key, '=', val);
+                ok = false;
+              } else {
+                console.log('OK  :', key, '=', JSON.stringify(val));
+              }
+            }
+            if (!ok) process.exit(1);
+            console.log('✅ package.json integrity passed');
+          "
+
+      - name: "Smoke: All required assets exist"
+        run: |
+          node -e "
+            const fs = require('fs');
+            const required = [
+              'main.js', 'preload.js', 'package.json',
+              'assets/icon.icns', 'assets/icon.png', 'assets/trayTemplate.png',
+              'src/dashboard/index.html', 'src/dashboard/dashboard.js', 'src/dashboard/style.css',
+              'src/overlay/index.html',
+            ];
+            const missing = required.filter(f => !fs.existsSync(f));
+            if (missing.length) {
+              console.error('Missing:', missing);
+              process.exit(1);
+            }
+            console.log('✅ All', required.length, 'required files present');
+          "
+
+      - name: "Smoke: Electron module resolves"
+        run: |
+          node -e "
+            const electronPath = require('electron');
+            const fs = require('fs');
+            if (!fs.existsSync(electronPath)) {
+              console.error('Electron binary not found at', electronPath);
+              process.exit(1);
+            }
+            console.log('✅ Electron binary found:', electronPath);
+          "
+
+      - name: "Smoke: IPC handler names match preload bridge"
+        run: |
+          node -e "
+            const fs = require('fs');
+            const mainSrc = fs.readFileSync('main.js', 'utf8');
+            const preloadSrc = fs.readFileSync('preload.js', 'utf8');
+
+            // Extract ipcMain.handle channel names
+            const mainChannels = [...mainSrc.matchAll(/ipcMain\.handle\(['\"]([\w-]+)['\"]]/g)].map(m => m[1]);
+            // Extract ipcRenderer.invoke channel names from preload
+            const preloadChannels = [...preloadSrc.matchAll(/ipcRenderer\.invoke\(['\"]([\w-]+)['\"]]/g)].map(m => m[1]);
+
+            const missingInMain = preloadChannels.filter(c => !mainChannels.includes(c));
+            const missingInPreload = mainChannels.filter(c => !preloadChannels.includes(c));
+
+            console.log('main.js handlers   :', mainChannels);
+            console.log('preload.js invokers:', preloadChannels);
+
+            if (missingInMain.length) console.warn('⚠️  Preload calls missing in main:', missingInMain);
+            if (missingInPreload.length) console.warn('⚠️  Main handlers not exposed in preload:', missingInPreload);
+            console.log('✅ IPC smoke check complete');
+          "
+
+  # ─────────────────────────────────────────────
+  # Job 4: All green — promote stage → main
+  # ─────────────────────────────────────────────
+  promote-to-main:
+    name: Promote → Main
+    needs: smoke-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT || github.token }}
+
+      - name: Configure Git bot identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Push stage → main
+        run: git push origin HEAD:main

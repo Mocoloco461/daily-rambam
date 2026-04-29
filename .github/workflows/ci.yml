@@ -1,10 +1,11 @@
-name: CI
+name: CI — PR Gate
+
+# Runs on Pull Requests targeting main only.
+# test and stage branches use their own pipeline workflows.
 
 on:
-  push:
-    branches: [main, stage, test]
   pull_request:
-    branches: [main, stage, test]
+    branches: [main]
 
 jobs:
   validate:
@@ -34,7 +35,7 @@ jobs:
       - name: Check preload syntax
         run: node --check preload.js
 
-      - name: Check src files syntax
+      - name: Check src JS files syntax
         run: |
           find src -name "*.js" | while read f; do
             echo "Checking $f"
