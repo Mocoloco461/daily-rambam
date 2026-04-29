@@ -1,0 +1,58 @@
+name: CD — Build & Release DMG
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-dmg:
+    name: Build DMG (macOS)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DMG
+        run: npm run build:prod
+
+      - name: List dist artefacts
+        run: ls -lh dist/
+
+      - name: Upload DMG as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rambam-daily-${{ github.ref_name }}-dmg
+          path: dist/*.dmg
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "רמב\"ם יומי ${{ github.ref_name }}"
+          body: |
+            ## ${{ github.ref_name }}
+
+            ### Installation
+            1. Download the `.dmg` file below
+            2. Open and drag the app to `/Applications`
+            3. Launch from Applications or Spotlight
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          files: dist/*.dmg
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
