@@ -1,7 +1,7 @@
 // dashboard.js — Dashboard renderer
 (async () => {
   // ── State ──
-  let settings = { mode: '1', intervalMin: 20, intervalMax: 60, active: true };
+  let settings = { mode: '1', hoursPerDay: 8, active: true };
 
   // ── Elements ──
   const statusCard    = document.getElementById('status-card');
@@ -17,14 +17,22 @@
   const toggleLabel   = document.getElementById('toggle-label');
   const mode1Btn      = document.getElementById('mode-1');
   const mode3Btn      = document.getElementById('mode-3');
-  const intervalMin   = document.getElementById('interval-min');
-  const intervalMax   = document.getElementById('interval-max');
-  const intervalMinV  = document.getElementById('interval-min-val');
-  const intervalMaxV  = document.getElementById('interval-max-val');
+  const intervalMin   = document.getElementById('hours-per-day');
+  const intervalMinV  = null; // unused
+  const intervalMaxV  = null; // unused
+  const intervalMax   = null; // unused
+  const smartHint     = document.getElementById('smart-hint');
   const btnSave       = document.getElementById('btn-save');
   const saveFeedback  = document.getElementById('save-feedback');
   const historyList   = document.getElementById('history-list');
   const historyLoad   = document.getElementById('history-loading');
+  const btnResetToday  = document.getElementById('btn-reset-today');
+  const modalBackdrop  = document.getElementById('modal-backdrop');
+  const modalCancel    = document.getElementById('modal-cancel');
+  const modalConfirm1  = document.getElementById('modal-confirm-1');
+  const modalStep2     = document.getElementById('modal-step2');
+  const modalCancel2   = document.getElementById('modal-cancel-2');
+  const modalConfirm2  = document.getElementById('modal-confirm-2');
 
   // ── Load settings ──
   async function loadSettings() {
@@ -35,10 +43,8 @@
   function applySettings(s) {
     mode1Btn.classList.toggle('active', s.mode === '1');
     mode3Btn.classList.toggle('active', s.mode === '3');
-    intervalMin.value = s.intervalMin || 20;
-    intervalMax.value = s.intervalMax || 60;
-    intervalMinV.textContent = s.intervalMin || 20;
-    intervalMaxV.textContent = s.intervalMax || 60;
+    const hpd = document.getElementById('hours-per-day');
+    if (hpd) hpd.value = s.hoursPerDay ?? 8;
     updateToggleButton(s.active);
   }
 
@@ -158,25 +164,36 @@
     });
   });
 
-  intervalMin.addEventListener('input', () => {
-    const val = parseInt(intervalMin.value);
-    intervalMinV.textContent = val;
-    if (val > parseInt(intervalMax.value)) {
-      intervalMax.value = val;
-      intervalMaxV.textContent = val;
-    }
-    settings.intervalMin = val;
+  // שעות ביום על המחשב
+  const hoursInput = document.getElementById('hours-per-day');
+
+  function updateSmartHint() {
+    const hours = parseFloat(hoursInput.value) || 8;
+    // Try to get the current remaining count from today's status
+    window.rambam.getTodayStatus().then(status => {
+      let remaining = 1;
+      if (status && status.items && status.items.length > 0) {
+        remaining = status.items.filter(it => it.status === 'pending' || it.status === 'skipped').length;
+        if (remaining === 0) remaining = status.items.length; // all done edge-case
+      }
+      const idealMin = Math.round((hours * 60) / remaining);
+      const lo = Math.max(5, Math.round(idealMin * 0.7));
+      const hi = Math.min(90, Math.round(idealMin * 1.3));
+      if (smartHint) {
+        smartHint.textContent = remaining > 1
+          ? `יש ${remaining} הלכות לקריאה — המרווח המחושב: כ${lo}-${hi} דקות`
+          : `הלכה אחת לקריאה — תופיע כעבור ${lo}-${hi} דקות`;
+      }
+    });
+  }
+
+  hoursInput.addEventListener('input', () => {
+    settings.hoursPerDay = parseFloat(hoursInput.value) || 8;
+    updateSmartHint();
   });
 
-  intervalMax.addEventListener('input', () => {
-    const val = parseInt(intervalMax.value);
-    intervalMaxV.textContent = val;
-    if (val < parseInt(intervalMin.value)) {
-      intervalMin.value = val;
-      intervalMinV.textContent = val;
-    }
-    settings.intervalMax = val;
-  });
+  // Initial hint
+  updateSmartHint();
 
   btnSave.addEventListener('click', async () => {
     await window.rambam.saveSettings(settings);
@@ -200,9 +217,50 @@
     updateToggleButton(active);
   });
 
+  // ── Reset Today ──
+  function openResetModal() {
+    modalStep2.style.display = 'none';
+    modalBackdrop.style.display = 'flex';
+    // small animation tick
+    requestAnimationFrame(() => {
+      document.getElementById('modal-box').classList.add('visible');
+    });
+  }
+
+  function closeResetModal() {
+    document.getElementById('modal-box').classList.remove('visible');
+    setTimeout(() => { modalBackdrop.style.display = 'none'; }, 200);
+    modalStep2.style.display = 'none';
+  }
+
+  btnResetToday.addEventListener('click', openResetModal);
+  modalCancel.addEventListener('click', closeResetModal);
+  modalCancel2.addEventListener('click', closeResetModal);
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) closeResetModal();
+  });
+
+  modalConfirm1.addEventListener('click', () => {
+    modalStep2.style.display = 'block';
+    modalConfirm1.style.display = 'none';
+    modalCancel.style.display = 'none';
+  });
+
+  modalConfirm2.addEventListener('click', async () => {
+    closeResetModal();
+    btnResetToday.disabled = true;
+    btnResetToday.querySelector('.btn-icon').textContent = '⏳';
+    await window.rambam.resetToday();
+    await loadTodayStatus();
+    await loadHistory();
+    btnResetToday.disabled = false;
+    btnResetToday.querySelector('.btn-icon').textContent = '🔄';
+  });
+
   // ── IPC Events ──
   window.rambam.onStatusUpdate((data) => {
-    if (data.allDone !== undefined || data.progress) loadTodayStatus();
+    if (data.allDone !== undefined || data.progress || data.reset) loadTodayStatus();
+    if (data.reset) loadHistory();
     if (data.active !== undefined) {
       settings.active = data.active;
       updateToggleButton(data.active);

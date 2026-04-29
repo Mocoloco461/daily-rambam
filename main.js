@@ -11,8 +11,7 @@ const store = new Store({
   defaults: {
     settings: {
       mode: '1',           // '1' or '3' chapters per day
-      intervalMin: 20,
-      intervalMax: 60,
+      hoursPerDay: 8,      // how many hours/day the user is at the computer
       active: true,
     },
     history: [],
@@ -373,13 +372,44 @@ async function showOverlay(itemData) {
 }
 
 // ──────────────────────────────────────────────
-// Scheduler
+// Scheduler — Smart interval based on remaining items & hours at computer
 // ──────────────────────────────────────────────
-function getRandomInterval() {
+
+/**
+ * Calculate a smart random interval (ms) based on:
+ *  - hoursPerDay: how many hours/day the user sits at the computer
+ *  - remainingItems: how many halakhot still need to be read today
+ *
+ * Goal: spread the remaining sessions across the day but finish ASAP.
+ * The "ideal" gap = (hoursPerDay * 60) / remainingItems minutes.
+ * We randomise ±30% around that gap so it feels natural.
+ * Hard floor: 5 min.  Hard ceiling: 90 min.
+ */
+function getSmartInterval() {
   const s = store.get('settings');
-  const min = (s.intervalMin || 20) * 60 * 1000;
-  const max = (s.intervalMax || 60) * 60 * 1000;
-  return min + Math.random() * (max - min);
+  const hours = Math.max(1, s.hoursPerDay || 8);
+
+  // Count remaining items (pending or skipped)
+  const progress = getTodayProgress();
+  const remaining = progress
+    ? progress.items.filter(it => it.status === 'pending' || it.status === 'skipped').length
+    : 1;  // fallback before first fetch
+
+  // Ideal gap in minutes
+  const totalMinutes = hours * 60;
+  const idealMinutes = remaining > 0 ? totalMinutes / remaining : totalMinutes;
+
+  // ±30% jitter, then clamp
+  const jitter  = 0.3;
+  const minGap  = Math.max(5,  idealMinutes * (1 - jitter));
+  const maxGap  = Math.min(90, idealMinutes * (1 + jitter));
+
+  const minutes = minGap + Math.random() * (maxGap - minGap);
+  console.log(
+    `Smart interval: ${remaining} items left, ${hours}h/day → ideal ${Math.round(idealMinutes)}m, ` +
+    `next in ~${Math.round(minutes)}m`
+  );
+  return Math.round(minutes * 60 * 1000);
 }
 
 function scheduleNext() {
@@ -389,7 +419,7 @@ function scheduleNext() {
   const s = store.get('settings');
   if (!s.active || !isSchedulerActive) return;
 
-  const delay = getRandomInterval();
+  const delay = getSmartInterval();
   console.log(`Next show in ${Math.round(delay / 60000)} minutes`);
   scheduler = setTimeout(triggerShow, delay);
 }
@@ -555,6 +585,15 @@ ipcMain.handle('toggle-scheduler', () => {
 
 ipcMain.handle('trigger-now', async () => {
   await triggerShow();
+  return true;
+});
+
+ipcMain.handle('reset-today', () => {
+  store.set('todayProgress', null);
+  updateTrayMenu();
+  if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+    dashboardWindow.webContents.send('status-update', { reset: true });
+  }
   return true;
 });
 

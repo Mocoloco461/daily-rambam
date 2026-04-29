@@ -70,23 +70,22 @@
         </div>
       </div>
 
-      <!-- Interval -->
-      <div class="setting-row setting-col">
+      <!-- Smart Scheduling -->
+      <div class="setting-row setting-col" id="smart-schedule-row">
         <div class="setting-label">
           <span class="setting-icon">⏱</span>
-          תדירות הופעה (בדקות)
+          שעות ביום על המחשב
         </div>
-        <div class="range-group">
-          <div class="range-item">
-            <label>מינימום</label>
-            <input type="range" id="interval-min" min="5" max="120" step="5" value="20" />
-            <span class="range-val" id="interval-min-val">20</span>
+        <div class="hours-stepper">
+          <button class="stepper-btn" id="hours-minus" aria-label="הפחת שעה">−</button>
+          <div class="stepper-display">
+            <input type="number" id="hours-per-day" min="1" max="16" step="0.5" value="8" />
+            <span class="hours-unit">שעות</span>
           </div>
-          <div class="range-item">
-            <label>מקסימום</label>
-            <input type="range" id="interval-max" min="5" max="120" step="5" value="60" />
-            <span class="range-val" id="interval-max-val">60</span>
-          </div>
+          <button class="stepper-btn" id="hours-plus" aria-label="הוסף שעה">+</button>
+        </div>
+        <div class="smart-hint" id="smart-hint">
+          המרווח בין ההצגות יחושב אוטומטית לפי מספר ההלכות שנותרו
         </div>
       </div>
 
@@ -98,6 +97,12 @@
       שמור הגדרות
     </button>
     <div class="save-feedback" id="save-feedback">✓ נשמר בהצלחה!</div>
+
+    <!-- Reset Today Button -->
+    <button class="btn btn-reset" id="btn-reset-today">
+      <span class="btn-icon">🔄</span>
+      אפס קריאה יומית
+    </button>
 
     <!-- Divider -->
     <div class="section-divider">
@@ -113,5 +118,26 @@
   </div><!-- .content -->
 
   <script src="dashboard.js"></script>
+
+  <!-- Reset Confirmation Modal -->
+  <div class="modal-backdrop" id="modal-backdrop" style="display:none">
+    <div class="modal-box" id="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-title">אתה בטוח?</div>
+      <div class="modal-body">כל ההתקדמות של היום תימחק ותצטרך להתחיל מחדש.</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modal-cancel">ביטול</button>
+        <button class="btn btn-confirm-1" id="modal-confirm-1">כן, אפס</button>
+      </div>
+      <!-- Step 2: second confirmation -->
+      <div class="modal-step2" id="modal-step2" style="display:none">
+        <div class="modal-body modal-warn">זו פעולה בלתי הפיכה. לחץ שוב לאישור סופי.</div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="modal-cancel-2">בטל</button>
+          <button class="btn btn-danger" id="modal-confirm-2">אפס לצמיתות</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('rambam', {
   // Scheduler
   toggleScheduler: () => ipcRenderer.invoke('toggle-scheduler'),
   triggerNow: () => ipcRenderer.invoke('trigger-now'),
+  resetToday: () => ipcRenderer.invoke('reset-today'),
 
   // Events from main → renderer
   onChapterData: (callback) => ipcRenderer.on('chapter-data', (_, data) => callback(data)),
