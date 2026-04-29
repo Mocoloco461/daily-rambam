@@ -85,8 +85,6 @@ jobs:
 
       - name: Build DMG (staging)
         run: npm run build:prod
-        env:
-          GH_TOKEN: ""
 
       - name: List dist artefacts
         run: ls -lh dist/
@@ -209,6 +207,8 @@ jobs:
 
   # ─────────────────────────────────────────────
   # Job 4: All green — promote stage → main
+  # Uses rebase to integrate any commits that landed on main
+  # (e.g. direct hotfixes) before pushing, so we never lose work.
   # ─────────────────────────────────────────────
   promote-to-main:
     name: Promote → Main
@@ -227,5 +227,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Push stage → main
-        run: git push origin HEAD:main
+      - name: Rebase stage on top of main, then push
+        run: |
+          # Fetch latest main so we have it locally
+          git fetch origin main
+
+          # Rebase stage commits on top of main (fast-forward if already in sync)
+          git rebase origin/main
+
+          # Now push — always a fast-forward from main's perspective
+          git push origin HEAD:main
