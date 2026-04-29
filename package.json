@@ -6,9 +6,9 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder --mac dmg",
-    "build:stage": "STAGE=true electron-builder --mac dmg",
-    "build:prod": "rm -rf dist && electron-builder --mac dmg",
+    "build": "electron-builder --mac dmg --publish never",
+    "build:stage": "STAGE=true electron-builder --mac dmg --publish never",
+    "build:prod": "rm -rf dist && electron-builder --mac dmg --publish never",
     "release": "npm run build:prod && mkdir -p release && cp dist/*.dmg release/"
   },
   "build": {

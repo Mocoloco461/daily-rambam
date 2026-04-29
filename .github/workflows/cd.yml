@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
           cache: npm
 
       - name: Install dependencies
@@ -28,9 +28,6 @@ jobs:
 
       - name: Build DMG
         run: npm run build:prod
-        env:
-          # Disable electron-builder's GitHub publisher — we publish manually below
-          GH_TOKEN: ""
 
       - name: List dist artefacts
         run: ls -lh dist/
