@@ -1,52 +1,87 @@
+# ──────────────────────────────────────────────
 # Dependencies
+# ──────────────────────────────────────────────
 node_modules/
 
-# Build output
+# ──────────────────────────────────────────────
+# Build & Release output
+# ──────────────────────────────────────────────
 dist/
 out/
 build/
+release/
 
-# Electron-builder cache
-.cache/
+# Electron-builder artefacts
 *.dmg
 *.pkg
 *.app
+*.AppImage
+*.snap
+*.deb
+*.rpm
 
+# ──────────────────────────────────────────────
 # macOS
+# ──────────────────────────────────────────────
 .DS_Store
 .AppleDouble
 .LSOverride
 ._*
+.Spotlight-V100
+.Trashes
 
+# ──────────────────────────────────────────────
 # Logs
+# ──────────────────────────────────────────────
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+electron-builder.log
 
-# Runtime data
+# ──────────────────────────────────────────────
+# Runtime
+# ──────────────────────────────────────────────
 *.pid
 *.seed
 
-# Coverage
+# ──────────────────────────────────────────────
+# Coverage / testing artefacts
+# ──────────────────────────────────────────────
 coverage/
 .nyc_output/
 
-# Dotenv / secrets
+# ──────────────────────────────────────────────
+# Environment / secrets
+# ──────────────────────────────────────────────
 .env
 .env.local
 .env.*.local
 
+# ──────────────────────────────────────────────
 # Editor directories
+# ──────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
-# OS generated
+# ──────────────────────────────────────────────
+# Windows
+# ──────────────────────────────────────────────
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Electron-store data (local user data, not source)
-# (stored in ~/Library/Application Support, not in project)
+# ──────────────────────────────────────────────
+# Electron-builder cache
+# ──────────────────────────────────────────────
+.cache/
+electron-builder-cache/
+
+# ──────────────────────────────────────────────
+# Source images (processed icons live in assets/)
+# ──────────────────────────────────────────────
+image.png
