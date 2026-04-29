@@ -192,6 +192,26 @@
     updateSmartHint();
   });
 
+  // +/- stepper buttons
+  const hoursMinus = document.getElementById('hours-minus');
+  const hoursPlus  = document.getElementById('hours-plus');
+
+  function clampHours(v) { return Math.min(16, Math.max(1, v)); }
+
+  hoursMinus.addEventListener('click', () => {
+    const cur = parseFloat(hoursInput.value) || 8;
+    hoursInput.value = clampHours(cur - 0.5);
+    settings.hoursPerDay = parseFloat(hoursInput.value);
+    updateSmartHint();
+  });
+
+  hoursPlus.addEventListener('click', () => {
+    const cur = parseFloat(hoursInput.value) || 8;
+    hoursInput.value = clampHours(cur + 0.5);
+    settings.hoursPerDay = parseFloat(hoursInput.value);
+    updateSmartHint();
+  });
+
   // Initial hint
   updateSmartHint();
 
