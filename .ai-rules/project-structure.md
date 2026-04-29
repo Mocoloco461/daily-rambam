@@ -64,5 +64,6 @@ daily-rambam/
 - Do NOT commit `image.png` (raw source) — it is `.gitignore`d.
 
 ### Branches
-- `main` — production-ready code only
-- `stage` — integration testing before merge to main
+- `main` — production-ready code only; CD triggers on `v*` tags
+- `stage` — integration testing before merge to main; CI only
+- `test` — active feature/experiment branches; CI only, free to break

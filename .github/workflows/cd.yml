@@ -28,6 +28,9 @@ jobs:
 
       - name: Build DMG
         run: npm run build:prod
+        env:
+          # Disable electron-builder's GitHub publisher — we publish manually below
+          GH_TOKEN: ""
 
       - name: List dist artefacts
         run: ls -lh dist/
@@ -42,6 +45,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           name: "רמב\"ם יומי ${{ github.ref_name }}"
           body: |
             ## ${{ github.ref_name }}
