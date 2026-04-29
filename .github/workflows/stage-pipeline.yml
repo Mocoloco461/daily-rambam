@@ -227,13 +227,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Rebase stage on top of main, then push
+      - name: Merge main into stage, then push
         run: |
-          # Fetch latest main so we have it locally
+          # Integrate any commits that exist on main but not on stage
+          # (e.g. hotfixes pushed directly). Merge never rewrites history,
+          # so it handles diverged branches safely.
           git fetch origin main
+          git merge origin/main --no-edit --strategy-option=ours
 
-          # Rebase stage commits on top of main (fast-forward if already in sync)
-          git rebase origin/main
-
-          # Now push — always a fast-forward from main's perspective
+          # Push — always fast-forward from main's perspective
           git push origin HEAD:main
